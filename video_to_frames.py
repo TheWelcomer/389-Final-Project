@@ -21,8 +21,8 @@ def video_to_frames(video_path, output_folder):
     vidcap.release()
 
 
-video_path = "labeled/0.hevc"
-output_folder = "vid0_frames"
+video_path = "labeled/1.hevc"
+output_folder = "vid1_frames"
 
 video_to_frames(video_path, output_folder)
 print("Frames extracted successfully.")
