@@ -1,5 +1,11 @@
 import cv2
 import os
+from PIL import Image
+from PIL import ImageDraw
+from PIL import ImageFont
+from tqdm import tqdm
+
+
 
 def video_to_frames(video_path, output_folder):
     # Create output folder if it doesn't exist
@@ -30,7 +36,8 @@ print("Frames extracted successfully.") """
 
 def frames_to_video(input_folder, video_path=""):
     imgs = []
-    for filename in os.listdir(input_folder):
+    print("Fetching image filenames:")
+    for filename in tqdm(os.listdir(input_folder)):
         img = os.path.join(input_folder, filename)
         if not os.path.isfile(img):
             continue
@@ -44,9 +51,44 @@ def frames_to_video(input_folder, video_path=""):
     print (size)
 
     video = cv2.VideoWriter(video_path, cv2_fourcc, 20, size)
-    for i in range(len(imgs)):
+    print ("Adding frames to video:")
+    for i in tqdm(range(len(imgs))):
         video.write(cv2.imread(imgs[i]))
         #print ("frame ", imgs[i])
     video.release()
 
+def create_labeled_frames(input_folder, text_labels, output_folder, new_filename="labeled_"):
+    imgs = []
+    print ("Fetching image filenames:")
+    for filename in tqdm(os.listdir(input_folder)):
+        img = os.path.join(input_folder, filename)
+        if not os.path.isfile(img):
+            continue
+        imgs.append(filename)
+    if not len(imgs) == len(text_labels):
+        raise AssertionError("Number of images not same as number of labels")
+
+    my_font = ImageFont.truetype("arial.ttf", 30)
+
+    #img.save(os.path.join(output_folder, new_filename + imgs[i]))
+
+    print ("Writing new frames:")
+    for i in tqdm(range(len(imgs))):
+        img = Image.open(os.path.join(input_folder, imgs[i]))
+        draw = ImageDraw.Draw(img)
+        draw.text((100, 100), text_labels[i], align="center", font=my_font, fill=(255, 0, 0))
+        img.save(os.path.join(output_folder, new_filename + imgs[i]))
+
+frames_to_video("./test_output", "./videos/test_labeled.mp4")
+
 #frames_to_video("./vid0_frames", "./videos/test1.mp4")
+
+labels = []
+with open("./labeled/0.txt") as f:
+    lines = f.readlines()
+    for line in lines:
+        data = line.split(" ")
+        new_label = "pitch: " + data[0] + ", yaw: " + data[1]
+        labels.append(new_label)
+
+#create_labeled_frames("./vid0_frames", labels, "./test_output")
