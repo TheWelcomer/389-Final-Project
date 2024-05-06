@@ -4,8 +4,8 @@ from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
 from tqdm import tqdm
-
-
+from numpy import isnan
+import math
 
 def video_to_frames(video_path, output_folder):
     # Create output folder if it doesn't exist
@@ -27,8 +27,8 @@ def video_to_frames(video_path, output_folder):
     vidcap.release()
 
 
-video_path = "labeled/0.hevc"
-output_folder = "vid0_frames"
+""" video_path = "labeled/0.hevc"
+output_folder = "vid0_frames" """
 
 
 """ video_to_frames(video_path, output_folder)
@@ -58,7 +58,7 @@ def frames_to_video(input_folder, video_path=""):
     video.release()
     print ("\nVideo released")
 
-def create_labeled_frames(input_folder, text_labels, output_folder, new_filename="labeled_", **kwargs):
+def create_labeled_frames(input_folder, text_labels, output_folder, new_filename="", **kwargs):
     imgs = []
     print ("Fetching image filenames:")
     for filename in tqdm(os.listdir(input_folder)):
@@ -84,16 +84,79 @@ def create_labeled_frames(input_folder, text_labels, output_folder, new_filename
         img.save(os.path.join(output_folder, new_filename + imgs[i]))
     print ("\nFinished writing frames")
 
+def create_arrow_frames(input_folder, labels, output_folder, new_filename="", **kwargs):
+    imgs = []
+    print ("Fetching image filenames:")
+    for filename in tqdm(os.listdir(input_folder)):
+        img = os.path.join(input_folder, filename)
+        if not os.path.isfile(img):
+            continue
+        imgs.append(filename)
+    if not len(imgs) == len(labels):
+        raise AssertionError("Number of images not same as number of labels")
+    
+    if not os.path.exists(output_folder):
+        os.mkdir(output_folder)
+    
+    print ("Adding arrows:")
+    for i in tqdm(range(len(imgs))):
+        img = Image.open(os.path.join(input_folder, imgs[i]))
+        draw = ImageDraw.Draw(img)
+        add_arrow(draw, labels[i][0], labels[i][1], (img.width/2, img.height-200))
+        img.save(os.path.join(output_folder, new_filename + imgs[i]))
+    
+    print("\nFinished adding arrows")
+
+def add_arrow(img_d, pitch, yaw, center, pitch_bias=0, yaw_bias=0):
+    if isnan(pitch) or isnan(yaw):
+        return
+    length = 50*((pitch+pitch_bias) * 180 / math.pi)
+    start = center
+    x_degrees = math.sin(yaw)+yaw_bias
+
+    end = (center[0] + 10*x_degrees*length, center[1] - math.cos(yaw)*length)
+    arrow_width = 10
+    #print (length, start, end)
+
+    img_d.line([start, end], fill="red", width=arrow_width)
+
+labels = []
+with open("./labeled/4.txt") as f:
+    lines = f.readlines()
+    for i, line in enumerate(lines):
+        data = line.split(" ")
+        new_label = [float(data[0]), float(data[1])]
+        labels.append(new_label)
+create_arrow_frames("./vid4_frames", labels, "./vid4_arrows")
+frames_to_video("./vid4_arrows", "./videos/vid4_arrows.mp4")
 
 #frames_to_video("./vid0_frames", "./videos/test1.mp4")
 
-labels = []
+""" labels = []
 with open("./labeled/0.txt") as f:
     lines = f.readlines()
     for i, line in enumerate(lines):
         data = line.split(" ")
         new_label = "pitch: " + data[0] + ", yaw: " + data[1]
-        labels.append(new_label)
+        new_label += "\nModel's pitch: " + data[0] + ", yaw: " + data[1]
+        labels.append(new_label) """
 
 """ create_labeled_frames("./vid0_frames", labels, "./test_output")
 frames_to_video("./test_output", "./videos/test_labeled.mp4") """
+
+""" for i in range(1, 5):
+    labels_file = "./labeled/" + str(i) + ".txt"
+    frames_folder = "./vid" + str(i) + "_frames"
+    output_folder = "./vid" + str(i) + "_labeled"
+    output_file = "./videos/video" + str(i) + "_labeled.mp4"
+    labels = []
+    with open(labels_file) as f:
+        lines = f.readlines()
+        for i, line in enumerate(lines):
+            data = line.split(" ")
+            new_label = "pitch: " + data[0] + ", yaw: " + data[1]
+            labels.append(new_label)
+
+    create_labeled_frames(frames_folder, labels, output_folder)
+    frames_to_video(output_folder, output_file) """
+
