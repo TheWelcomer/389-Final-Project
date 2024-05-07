@@ -67,6 +67,7 @@ def create_labeled_frames(input_folder, text_labels, output_folder, new_filename
             continue
         imgs.append(filename)
     if not len(imgs) == len(text_labels):
+        print (len(imgs), len(text_labels))
         raise AssertionError("Number of images not same as number of labels")
 
     my_font = ImageFont.truetype("arial.ttf" if not "font" in kwargs else kwargs["font"], 
@@ -84,7 +85,7 @@ def create_labeled_frames(input_folder, text_labels, output_folder, new_filename
         img.save(os.path.join(output_folder, new_filename + imgs[i]))
     print ("\nFinished writing frames")
 
-def create_arrow_frames(input_folder, labels, output_folder, new_filename="", **kwargs):
+def create_arrow_frames(input_folder, labels, output_folder, new_filename="", bias=(0, 0), **kwargs):
     imgs = []
     print ("Fetching image filenames:")
     for filename in tqdm(os.listdir(input_folder)):
@@ -93,6 +94,7 @@ def create_arrow_frames(input_folder, labels, output_folder, new_filename="", **
             continue
         imgs.append(filename)
     if not len(imgs) == len(labels):
+        print (len(imgs), len(labels))
         raise AssertionError("Number of images not same as number of labels")
     
     if not os.path.exists(output_folder):
@@ -102,7 +104,7 @@ def create_arrow_frames(input_folder, labels, output_folder, new_filename="", **
     for i in tqdm(range(len(imgs))):
         img = Image.open(os.path.join(input_folder, imgs[i]))
         draw = ImageDraw.Draw(img)
-        add_arrow(draw, labels[i][0], labels[i][1], (img.width/2, img.height-200))
+        add_arrow(draw, labels[i][0], labels[i][1], (img.width/2, img.height-200), bias[0], bias[1])
         img.save(os.path.join(output_folder, new_filename + imgs[i]))
     
     print("\nFinished adding arrows")
@@ -120,43 +122,34 @@ def add_arrow(img_d, pitch, yaw, center, pitch_bias=0, yaw_bias=0):
 
     img_d.line([start, end], fill="red", width=arrow_width)
 
-labels = []
-with open("./labeled/4.txt") as f:
-    lines = f.readlines()
-    for i, line in enumerate(lines):
-        data = line.split(" ")
-        new_label = [float(data[0]), float(data[1])]
-        labels.append(new_label)
-create_arrow_frames("./vid4_frames", labels, "./vid4_arrows")
-frames_to_video("./vid4_arrows", "./videos/vid4_arrows.mp4")
-
-#frames_to_video("./vid0_frames", "./videos/test1.mp4")
-
 """ labels = []
 with open("./labeled/0.txt") as f:
     lines = f.readlines()
     for i, line in enumerate(lines):
         data = line.split(" ")
-        new_label = "pitch: " + data[0] + ", yaw: " + data[1]
-        new_label += "\nModel's pitch: " + data[0] + ", yaw: " + data[1]
-        labels.append(new_label) """
+        new_label = "Pitch: " + data[0] + ", yaw: " + data[1]
+        labels.append(new_label)
+create_labeled_frames("./vid0_frames", labels, "./vid0_labeled")
+frames_to_video("./vid0_labeled", "./videos/vid0_arrows.mp4") """
 
-""" create_labeled_frames("./vid0_frames", labels, "./test_output")
-frames_to_video("./test_output", "./videos/test_labeled.mp4") """
+biases = [-3.12e-02, -.95e-02, -4.95e-02, -1.95e-02, -5.4e-02]
 
-""" for i in range(1, 5):
+""" for i in []:
     labels_file = "./labeled/" + str(i) + ".txt"
-    frames_folder = "./vid" + str(i) + "_frames"
-    output_folder = "./vid" + str(i) + "_labeled"
-    output_file = "./videos/video" + str(i) + "_labeled.mp4"
+    output_folder = "./vid" + str(i) + "_arrows"
+    frames_folder = "./vid" + str(i) + "_labeled"
+    output_file = "./videos/video" + str(i) + "_arrows.mp4"
     labels = []
     with open(labels_file) as f:
         lines = f.readlines()
-        for i, line in enumerate(lines):
+        for j, line in enumerate(lines):
             data = line.split(" ")
-            new_label = "pitch: " + data[0] + ", yaw: " + data[1]
+            new_label = [float(data[0]), float(data[1])]
             labels.append(new_label)
+    create_arrow_frames(frames_folder, labels, output_folder, bias=(0, biases[i]))
+    frames_to_video(output_folder, output_file)
 
-    create_labeled_frames(frames_folder, labels, output_folder)
-    frames_to_video(output_folder, output_file) """
-
+for i in range(5, 10):
+    frames_folder = "./vid" + str(i) + "_frames"
+    video_path = "./videos/vid" + str(i) + ".mp4"
+    frames_to_video(frames_folder, video_path) """
